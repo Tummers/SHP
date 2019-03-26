@@ -21,6 +21,7 @@ class Qtensor:
 
         self.err_per_step = 0.00001 # half accuracy in Qtensor file
 
+
     def init_q_lattices(self):
         """
         creates 3D q lattices [lengthi, lengthj, lengthk]
@@ -146,7 +147,12 @@ class Qtensor:
             temporary_tot = term1 + term2 + term3 + term4 + term5 + term6
             err = np.sqrt((err ** 2) + (self.err_per_step ** 2))
             tot += temporary_tot
-
+        
+        infile = np.loadtxt("in.txt")
+        activity = infile[0]
+        
+        self.add_to_file(np.array([activity, tot, err]))
+        
         return tot, err
 
 
@@ -182,13 +188,51 @@ class Qtensor:
 
                 tot += temp_tot
 
+        infile = np.loadtxt("in.txt")
+        activity = infile[0]
+        
+        self.add_to_file(np.array([activity, tot, err]))
+        
         return tot, err
+
+
+    def add_to_file(self, line):
+        """
+        writes a line to a file
+        """
+        f = open("elastic_energies.txt", "a")
+        np.savetxt(f, line, newline=" ")
+        f.write("\n")
+        f.close()
+
+
+def input_increment(name, increment):
+    """
+    increments a value in the in.txt file
+    """
+    if(name == "activity"):
+        index = 0
+    elif(name == "bodyforce"):
+        index = 1
+    elif(name == "shearv"):
+        index = 2
+    else:
+        print("invalid variable name")
+
+    array = np.loadtxt("in.txt")
+    array[index] += increment
+    print("Current activity is: %.5f" %(array[index]))
+    f = open("in.txt", "w")
+    for i in range(3):
+        f.write(str(array[i]) + " ")
 
 
 def main():
     
     filename = sys.argv[1]
     dimensions = int(sys.argv[2])
+    increment_name = sys.argv[3]
+    increment_value = float(sys.argv[4])
     qdata = Qtensor(filename)
 
     if(dimensions == 1): 
@@ -196,9 +240,12 @@ def main():
     elif(dimensions == 2): 
         elastic_energy, err = qdata.summation_2d()
     else:
-        print("Input as: 'python3 elastic_energy.py <filename> <number of dimensions>'")
+        print("Input as: 'python3 elastic_energy.py <filename> <number of dimensions> <increment_name> <increment_value>'")
         exit()
     
-    print("Elastic energy: %f, Error: %f" %(elastic_energy, err))
+        
+    input_increment(increment_name, increment_value)
+    
+    # print("Elastic energy: %f, Error: %f" %(elastic_energy, err))
 
 main()
